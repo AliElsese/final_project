@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+:root {
+    --MainBackGroundColor: #F5F5F5;
+    --WhiteColor: #FFFFFF;
+    --MainColor: #D9176C;
+    --YellowColor: #EBC305;
+    --OrangeColor: #EAA451;
+    --IconColor: #22222280;
+}

@@ -2,6 +2,11 @@ import { Player } from "@lottiefiles/react-lottie-player";
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { FiFilter, FiHeart, FiSearch, FiShoppingCart } from "react-icons/fi";
+import { useWishlistStore } from "../store/wishlistStore";
+import { useAuthStore } from "../store";
+import { FaHeart } from "react-icons/fa";
+import { useCartStore } from "../store/cartStore";
+import toast from "react-hot-toast";
 
 export default function BooksPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -18,12 +23,21 @@ export default function BooksPage() {
         setSelectedCategories((prev) => prev.includes(id) ? prev.filter((el) => el !== id) : [...prev, id])
     }
 
+    const { token, user } = useAuthStore();
+    const { fetchWishlist, wishlist, addToWishlist, removeFromWishlist} = useWishlistStore();
+    const { fetchCart, cart, addToCart, removeFromCart } = useCartStore();
+
+    
+
     useEffect(() => {
-        // pending
-        setIsLoading(true)
+        setIsLoading(true);
 
         const getPageData = async () => {
             try {
+                if(token) fetchWishlist(token, user);
+
+                if(token) fetchCart(token, user);
+
                 const dbCategories = await axios.get('http://localhost:1337/api/categories')
                 // console.log(dbCategories.data.data)
                 setCategories(dbCategories.data.data)
@@ -77,12 +91,6 @@ export default function BooksPage() {
                         filters: {
                             category: {
                                 id: selectedCategories
-                            }
-                        },
-
-                        filters: {
-                            pro_name: {
-                                $contains: 'MD'
                             }
                         }
                     }
@@ -146,6 +154,42 @@ export default function BooksPage() {
         getPageData();
     }, [currentPage, selectedCategories])
 
+    const handleRemoveFromWishlist = async (productId) => {
+        if(token) await removeFromWishlist(productId, token).finally(() => {
+            toast.success('Book Removed Successfully..!', {
+                duration: 1800,
+                position: 'top-center'
+            });
+        });
+    }
+
+    const handleAddToWishlist = async (productId) => {
+        if(token) await addToWishlist(productId, token).finally(() => {
+            toast.success('Book Added Successfully..!', {
+                duration: 1800,
+                position: 'top-center'
+            });
+        });
+    }
+
+    const handleRemoveFromCart = async (productId) => {
+        if(token) await removeFromCart(productId, token).finally(() => {
+            toast.success('Book Removed From Cart Successfully..!', {
+                duration: 1800,
+                position: 'top-center'
+            });
+        });
+    }
+
+    const handleAddToCart = async (productId) => {
+        if(token) await addToCart(productId, token).finally(() => {
+            toast.success('Book Added To Cart Successfully..!', {
+                duration: 1800,
+                position: 'top-center'
+            });
+        });
+    }
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="container mx-auto px-4 py-8">
@@ -203,51 +247,79 @@ export default function BooksPage() {
                                         <Player autoplay loop src="/animations/loading_gray.json" />
                                     </div>
                                 ) : (
-                                    books.map((book) => (
-                                        <div key={book.id} className="bg-white rounded-lg shadow-sm p-6">
-                                            <div className="flex gap-6">
-                                                <div className="flex-shrink-0">
-                                                    <div className="w-32 h-48 rounded-lg">
-                                                        <img src={`http://localhost:1337${book.pro_image.url}`} alt={book.pro_image.name} />
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h3 className="text-xl font-semibold text-gray-800">{book.pro_name}</h3>
-                                                    </div>
-                                                
-                                                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                                                        {book.pro_description}
-                                                    </p>
-                                                
-                                                    <div className="flex items-center space-x-6 text-sm text-gray-600">
-                                                        <div>
-                                                            <span className="text-gray-500">Author</span>
-                                                            <div className="font-medium">{book.pro_author}</div>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-gray-500">Year</span>
-                                                            <div className="font-medium">{book.pro_year}</div>
+                                    books.map((book) => {
+                                        const isInWishlist = wishlist.some(item => item.id === book.id)
+                                        const isInCart = cart.some(item => item.id === book.id)
+                                        return (
+                                            <div key={book.id} className="bg-white rounded-lg shadow-sm p-6">
+                                                <div className="flex gap-6">
+                                                    <div className="flex-shrink-0">
+                                                        <div className="w-32 h-48 rounded-lg">
+                                                            <img src={`http://localhost:1337${book.pro_image.url}`} alt={book.pro_image.name} />
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <div className="flex flex-col items-end space-y-4">
-                                                    <div className="text-2xl font-bold text-gray-800">${book.pro_price}</div>
-                                                    <div className="flex space-x-2">
-                                                        <button className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-                                                            <span>Add To Cart</span>
-                                                            <FiShoppingCart className="w-4 h-4" />
-                                                        </button>
-                                                        <button className="border border-pink-500 text-pink-500 hover:bg-pink-50 p-2 rounded-lg transition-colors">
-                                                            <FiHeart className="w-5 h-5" />
-                                                        </button>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <h3 className="text-xl font-semibold text-gray-800">{book.pro_name}</h3>
+                                                        </div>
+                                                    
+                                                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                                                            {book.pro_description}
+                                                        </p>
+                                                    
+                                                        <div className="flex items-center space-x-6 text-sm text-gray-600">
+                                                            <div>
+                                                                <span className="text-gray-500">Author</span>
+                                                                <div className="font-medium">{book.pro_author}</div>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-gray-500">Year</span>
+                                                                <div className="font-medium">{book.pro_year}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col items-end space-y-4">
+                                                        <div className="text-2xl font-bold text-gray-800">${book.pro_price}</div>
+                                                        <div className="flex space-x-2">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    isInCart ? handleRemoveFromCart(book.id) : handleAddToCart(book.id)
+                                                                }}
+                                                                className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                                                                <span>
+                                                                    {
+                                                                        isInCart ? (
+                                                                            'Remove From Cart'
+                                                                        ) : (
+                                                                            'Add To Cart'
+                                                                        )
+                                                                    }
+                                                                </span>
+                                                                <FiShoppingCart className="w-4 h-4" />
+                                                            </button>
+                                                            {
+                                                                isInWishlist ? (
+                                                                    <button 
+                                                                        onClick={() => { handleRemoveFromWishlist(book.id) }}
+                                                                        className="border border-pink-500 text-pink-500 hover:bg-pink-50 p-2 rounded-lg transition-colors">
+                                                                        <FaHeart className="w-5 h-5" />
+                                                                    </button>
+                                                                ) : (
+                                                                    <button 
+                                                                        onClick={() => { handleAddToWishlist(book.id) }}
+                                                                        className="border border-pink-500 text-pink-500 hover:bg-pink-50 p-2 rounded-lg transition-colors">
+                                                                        <FiHeart className="w-5 h-5" />
+                                                                    </button>
+                                                                )
+                                                            }
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        )
+                                    })
                                 )
                             }
                         </div>
@@ -256,8 +328,16 @@ export default function BooksPage() {
                             <button className="text-pink-500 hover:text-pink-600 px-3 py-2" 
                                 disabled={currentPage === 1 ? true : false}
                                 onClick={() => { setCurrentPage( currentPage - 1 )}}>Previous</button>
-                            <button className="bg-pink-500 text-white px-4 py-2 rounded-lg">1</button>
-                            <button className="bg-pink-500 text-white px-4 py-2 rounded-lg">2</button>
+                            {
+                                Array.from({ length: pagesNumber }, (_, i) => {
+                                    return (
+                                        <button key={i} onClick={() => { setCurrentPage( i + 1 )}}
+                                            className={`${currentPage === i + 1 ? 'bg-pink-500 text-white' : 'bg-white text-pink-500'} px-4 py-2 rounded-lg`}>
+                                            { i + 1 }
+                                        </button>
+                                    )
+                                })
+                            }
                             <button className="text-pink-500 hover:text-pink-600 px-3 py-2"
                                 disabled={currentPage === pagesNumber ? true : false}
                                 onClick={() => { setCurrentPage( currentPage + 1 )}}>Next</button>

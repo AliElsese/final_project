@@ -11,6 +11,9 @@ import ProfilePage from "../pages/ProfilePage";
 import WishlistPage from "../pages/WishlistPage";
 import ProtectedRoutes from "../Auth/ProtectedRoutes";
 import { useAuthStore } from "../store";
+import CartPage from "../pages/CartPage";
+import CheckoutPage from "../pages/CheckoutPage";
+import HistoryPage from "../pages/HistoryPage";
 
 export default function AppRouter() {
     const { isLoggedIn } = useAuthStore();
@@ -35,6 +38,24 @@ export default function AppRouter() {
                     <Route path="wishlist" element={
                         <ProtectedRoutes isLoggedIn={isLoggedIn} redirectTo={'/login'}>
                             <WishlistPage />
+                        </ProtectedRoutes>
+                    } />
+
+                    <Route path="cart" element={
+                        <ProtectedRoutes isLoggedIn={isLoggedIn} redirectTo={'/login'}>
+                            <CartPage />
+                        </ProtectedRoutes>
+                    } />
+
+                    <Route path="checkout" element={
+                        <ProtectedRoutes isLoggedIn={isLoggedIn} redirectTo={'/login'}>
+                            <CheckoutPage />
+                        </ProtectedRoutes>
+                    } />
+
+                    <Route path="history" element={
+                        <ProtectedRoutes isLoggedIn={isLoggedIn} redirectTo={'/login'}>
+                            <HistoryPage />
                         </ProtectedRoutes>
                     } />
 

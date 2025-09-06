@@ -3,128 +3,33 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { FaHeart } from "react-icons/fa";
 import { FiHeart } from "react-icons/fi";
-import { data, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { backendUrlApi, useAuthStore } from "../store";
+import { useAuthStore } from "../store";
+import { useWishlistStore } from "../store/wishlistStore";
 
 export default function WishlistPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [wishlist, setWishlist] = useState([]);
-    const [wishlistId, setWishlistId] = useState(null);
 
     const { token, user } = useAuthStore();
+
+    const { fetchWishlist, wishlist, removeFromWishlist } = useWishlistStore();
 
 
     useEffect(() => {
         setIsLoading(true);
 
-        const getWishlist = async () => {
-            await axios.get(`${backendUrlApi}wishlists`, {
-                params: {
-                    "populate[users_permissions_user][populate]": "*",
-                    "populate[products][populate]": "*",
-                    "filters[users_permissions_user][id][$eq]": user.id
-                },
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }).then((res) => {
-                setWishlist(res.data.data[0].products);
-                setWishlistId(res.data.data[0].documentId);
-            }).catch((err) => {
-                console.log(err)
-            }).finally(() => {
-                setIsLoading(false);
-            })
-        }
-
-        getWishlist();
-
-        // const getWishlist = async () => {
-        //     await axios.get(`${baseUrlApi}wishlists`, {
-        //         params: {
-        //             "populate[products][populate]": "*",
-        //             "populate[users_permissions_user][populate]": "*",
-        //             "filters[users_permissions_user][id][$eq]": user.id
-        //         },
-        //         headers: {
-        //             Authorization: `Bearer ${token}`
-        //         }
-        //     }).then((res) => {
-        //         setWishlistId(res.data.data[0].documentId);
-        //         setWishlist(res.data.data[0].products);
-        //     }).catch((err) => {
-        //         console.log(err)
-        //     }).finally(() => {
-        //         setIsLoading(false);
-        //     })
-        // }
-
-        // getWishlist();
+        if(token) fetchWishlist(token, user).finally(() => { setIsLoading(false); });
     }, []);
 
-
-
-    const removeFromWishlist = async (productId) => {
-        const updatedProducts = wishlist.filter((el) => el.id !== productId).map((el) => el.id)
-
-        await axios.put(`${backendUrlApi}wishlists/${wishlistId}`, {
-            data: {
-                products: updatedProducts
-            }
-        }, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }).then((res) => {
-            setWishlist((prev) => prev.filter((el) => el.id !== productId));
-            toast.success('Removed Successfully..!', {
+    const handleRemoveFromWishlist = async(productId) => {
+        if(token) await removeFromWishlist(productId, token).finally(() => {
+            toast.success('Book Removed Successfully..!', {
                 duration: 1800,
                 position: 'top-center'
             });
-        }).catch((err) => {
-            toast.error('Error in removing..!', {
-                duration: 1800,
-                position: 'top-center'
-            });
-        })
+        });
     }
-
-
-
-
-
-
-
-
-
-
-    // const removeFromWishlist = async (productId) => {
-    //     const updatedProducts = wishlist
-    //         .filter((item) => item.id !== productId)
-    //         .map((item) => item.id);
-
-    //     await axios.put(`${baseUrlApi}wishlists/${wishlistId}`, {
-    //         data: {
-    //             products: updatedProducts
-    //         }
-    //     }, {
-    //         headers: {
-    //             Authorization: `Bearer ${token}`
-    //         }
-    //     }).then((res) => {
-    //         setWishlist((prev) => prev.filter((item) => item.id !== productId));
-    //         toast.success('Book Removed Successfully..!', {
-    //             duration: 1800,
-    //             position: 'top-center'
-    //         });
-    //     }).catch((err) => {
-    //         toast.error('Error Removing..!', {
-    //             duration: 1800,
-    //             position: 'top-center'
-    //         });
-    //     })
-    // }
 
     return (
     
@@ -181,7 +86,7 @@ export default function WishlistPage() {
                                             </div>
 
                                             <div className="col-span-2 text-center">
-                                                <button onClick={() => { removeFromWishlist(item.id) }}
+                                                <button onClick={() => { handleRemoveFromWishlist(item.id) }}
                                                     className="border border-pink-500 text-pink-500 hover:bg-pink-50 p-2 rounded-lg transition-colors">
                                                     <FaHeart className="w-5 h-5" />
                                                 </button>
